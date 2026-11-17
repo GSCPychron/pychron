@@ -130,7 +130,18 @@ class BaseLaserPlugin(BaseTaskPlugin):
             klassfactory = getattr(factory, self.klass[1])
 
         params = dict(name=self.name)
-        if mode == "client":
+
+        # Ethernet managers (e.g. Chromium) are always network clients, so read
+        # their <communications> block even when <mode>client</mode> is not set.
+        # Otherwise host/port stay empty and every command fails with "://:0".
+        from pychron.lasers.laser_managers.ethernet_laser_manager import (
+            EthernetLaserManager,
+        )
+
+        is_ethernet = isinstance(klassfactory, type) and issubclass(
+            klassfactory, EthernetLaserManager
+        )
+        if mode == "client" or is_ethernet:
             try:
                 tag = ip.get_parameter(plugin, "communications", element=True)
                 for attr in [
