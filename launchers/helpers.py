@@ -384,6 +384,28 @@ def monkey_patch_toolbar():
     ApplicationWindow._update_tool_bar_managers = _update_tool_bar_managers
 
 
+def monkey_patch_range_editor():
+    """
+    traitsui SimpleSliderEditor._convert_to_slider returns ``self.low`` unchanged
+    when ``high <= low``. With float bounds that hands a float to
+    QSlider.setValue, which PyQt5 rejects on Python 3.10+:
+    ``TypeError: setValue(self, a0: int): argument 1 has unexpected type 'float'``.
+    Coerce the slider position to an int clamped to the slider's 0-10000 range.
+    """
+    from traitsui.qt.range_editor import SimpleSliderEditor
+
+    original = SimpleSliderEditor._convert_to_slider
+
+    def _convert_to_slider(self, value):
+        try:
+            ivalue = int(original(self, value))
+        except (TypeError, ValueError, ZeroDivisionError):
+            ivalue = 0
+        return max(0, min(10000, ivalue))
+
+    SimpleSliderEditor._convert_to_slider = _convert_to_slider
+
+
 KLASS_MAP = {
     "pyexperiment": "PyExperiment",
     "pyview": "PyView",
@@ -406,6 +428,7 @@ def entry_point(appname, debug=False):
     monkey_patch_panel()
     monkey_patch_table_view()
     monkey_patch_toolbar()
+    monkey_patch_range_editor()
 
     # set_stylesheet('darkorange.css')
     env = initialize_version(appname, debug)
