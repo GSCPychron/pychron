@@ -286,7 +286,7 @@ def _handle_bus_error(signum: int, frame) -> None:
     sys.exit(1)
 
 
-def launch(klass):
+def launch(klass) -> None:
     """ """
     # login protection
     #
@@ -315,8 +315,9 @@ def launch(klass):
         logger.warning("m3_diagnostics early install failed: %r", _e)
 
     # Register signal handler for SIGBUS (bus error, signal 10) to gracefully quit
-    # instead of crashing
-    signal.signal(signal.SIGBUS, _handle_bus_error)
+    # instead of crashing. SIGBUS is POSIX-only (absent on Windows).
+    if hasattr(signal, "SIGBUS"):
+        signal.signal(signal.SIGBUS, _handle_bus_error)
 
     app = app_factory(klass)
     try:
