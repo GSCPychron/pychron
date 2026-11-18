@@ -95,7 +95,7 @@ class StreamGraph(Graph):
 
         return args
 
-    def update_y_limits(self, plotid=0, **kw):
+    def update_y_limits(self, plotid=0, pad=5, **kw):
         ma = -1
         mi = 1e10
         for _k, v in self.plots[plotid].plots.items():
@@ -112,7 +112,7 @@ class StreamGraph(Graph):
         if not self.track_y_min[plotid]:
             mi = None
 
-        self.set_y_limits(min_=mi, max_=ma, plotid=plotid, pad=5, **kw)
+        self.set_y_limits(min_=mi, max_=ma, plotid=plotid, pad=pad, **kw)
 
     def set_scan_width(self, v, plotid=0):
         self.scan_widths[plotid] = v
