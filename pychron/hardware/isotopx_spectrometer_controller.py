@@ -20,7 +20,7 @@ from traits.api import Str, Bool, HasTraits
 from apptools.preferences.preference_binding import bind_preference
 
 # ============= standard library imports ========================
-from threading import Lock
+from threading import RLock
 import socket
 import time
 
@@ -135,7 +135,10 @@ class NGXController(CoreDevice):
             return False
 
         self.communicator.strip = False
-        self.lock = Lock()
+        # Reentrant: NGX.read_intensities holds this lock and then calls
+        # trigger_acq -> SpectrometerDevice.ask, which takes it again.
+        # A plain Lock deadlocked the scan thread on StartAcq.
+        self.lock = RLock()
 
         bind_preference(self, "username", "pychron.spectrometer.ngx.username")
         bind_preference(self, "password", "pychron.spectrometer.ngx.password")
