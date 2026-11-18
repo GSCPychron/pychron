@@ -54,7 +54,7 @@ class NGXSpectrometer(BaseSpectrometer, IsotopxMixin):
     acq_count = 0
     total_acq_count = 10
     has_atonas = True
-    _last_collection_time = None
+    _last_collection_times = None
     _stale_event_count = 0
     _max_stale_event_count = 3
     # triggered_lock_release_required = False
@@ -241,7 +241,7 @@ class NGXSpectrometer(BaseSpectrometer, IsotopxMixin):
                     continue
 
                 collection_time = parsed["collection_time"]
-                if self._is_stale_event(collection_time):
+                if self._is_stale_event(collection_time, parsed["kind"]):
                     if self._handle_stale_event(collection_time):
                         break
                     continue
@@ -367,7 +367,7 @@ class NGXSpectrometer(BaseSpectrometer, IsotopxMixin):
     def _reset_acquisition_progress(self):
         self.acq_count = 0
         self._stale_event_count = 0
-        self._last_collection_time = None
+        self._last_collection_times = None
 
     def _mark_acquisition_complete(self):
         self.acq_count = 0
@@ -380,12 +380,18 @@ class NGXSpectrometer(BaseSpectrometer, IsotopxMixin):
         if self.microcontroller and self.microcontroller.triggered:
             self.microcontroller.stop_acquisition()
 
-    def _is_stale_event(self, collection_time):
+    def _is_stale_event(self, collection_time, kind=None):
+        # Track progression per event kind. One NGX cycle emits ACQ and then
+        # the buffered ACQ.B with the same collection time; comparing across
+        # kinds flagged every ACQ.B as stale and the read timed out.
         if collection_time is None:
             return False
 
-        last = self._last_collection_time
-        self._last_collection_time = collection_time
+        if self._last_collection_times is None:
+            self._last_collection_times = {}
+
+        last = self._last_collection_times.get(kind)
+        self._last_collection_times[kind] = collection_time
         return last is not None and collection_time <= last
 
     def _handle_stale_event(self, collection_time):

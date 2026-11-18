@@ -74,6 +74,12 @@ class NGXAcquisitionTestCase(unittest.TestCase):
         self.assertFalse(self.spec._is_stale_event(t1))
         self.assertTrue(self.spec._is_stale_event(t0))
 
+    def test_acq_and_acqb_same_cycle_not_stale(self):
+        t = datetime(2024, 1, 1, 12, 0, 0)
+        self.assertFalse(self.spec._is_stale_event(t, "ACQ"))
+        self.assertFalse(self.spec._is_stale_event(t, "ACQ.B"))
+        self.assertTrue(self.spec._is_stale_event(t, "ACQ.B"))
+
     def test_repeated_stale_events_reset_acquisition(self):
         self.spec.microcontroller.triggered = True
         self.spec._stale_event_count = self.spec._max_stale_event_count - 1
